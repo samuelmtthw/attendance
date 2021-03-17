@@ -1,5 +1,5 @@
 # USAGE
-# python face_recognition.py --encodings encodings.pickle
+# python faceRecognition.py --encodings encodings.pickle
 
 # import the necessary packages
 from imutils.video import VideoStream
