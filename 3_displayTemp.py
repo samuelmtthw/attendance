@@ -5,7 +5,6 @@ import argparse
 import imutils
 import time
 import cv2
-import os
 import board
 import busio as io
 import adafruit_mlx90614
@@ -39,7 +38,7 @@ while True:
     frame = vs.read()
     frame = imutils.resize(frame, width=500)
 
-    # getting temperature from MLX90614
+    # read temperature from MLX90614
     objectTemp = "{:.2f}".format(mlx.object_temperature)
     
     # convert the input frame from (1) BGR to grayscale (for face
