@@ -1,5 +1,5 @@
 #RUN WITH:
-#python3 attendance.py -f "papi/mami/koko/dede"
+#python3 face2DB.py -f "papi/mami/koko/dede" -d "raspberry/mac" -ip "ipaddress"
 
 #LIBRARIES
 import mysql.connector
@@ -10,6 +10,11 @@ import argparse
 ap = argparse.ArgumentParser()
 ap.add_argument ("-f", "--face", required=True,
     help = "the id of the detected face")
+ap.add_argument ("-d", "--device", required=True,
+    help = "the device that you are using")
+ap.add_argument ("-ip", "--ip", default="localhost", 
+    help = "ip address of the database")
+
 args = vars(ap.parse_args())
 
 #SET FACE
@@ -18,19 +23,30 @@ class Person:
         self.id = id
         self.temp = temp
 
-face1 = Person("7401001", 36)
-face2 = Person("7307003", 37)
-face3 = Person("9911001", 38)
-face4 = Person("0411001", 39)
+face1 = Person("0321001", 36)
+face2 = Person("0321002", 37)
+face3 = Person("0321003", 38)
+face4 = Person("0321004", 39)
 
 
-#SET DATABASE
-db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="root",
-    database="attendance_system"
-)
+if args["device"]=="raspberry":
+    #! SET DATABASE (RASPBERRY PI TO MAC)
+    # change the host's IP address according to Macbook's IP addres.
+    db = mysql.connector.connect(
+        host = args["ip"],
+        user = "root",
+        password = "root",
+        database = "attendance_system"
+    )
+elif args["device"]=="mac":
+    #SET DATABASE (LOCAL MACHINE)
+    db = mysql.connector.connect(
+        host = "localhost",
+        user = "root",
+        password = "root",
+        database = "attendance_system"
+    )
+
 mycursor = db.cursor()
 
 
@@ -61,7 +77,7 @@ if tempDetected == True:
   present = False
 
   #AMBIL DATA SEMUA ORANG YANG MASUK HARI INI
-  sql = "SELECT attendanceID, employeeID, startTime, finishTime FROM attendance_list WHERE date = %s"
+  sql = "SELECT attendanceID, employeeID, startTime, finishTime FROM attendance_list WHERE attendanceDate = %s"
   val = (currentDate,)
   mycursor.execute(sql,val)
   myresult = mycursor.fetchall()
@@ -89,10 +105,12 @@ if tempDetected == True:
       times = mycursor.fetchall()
 
       startTime, errorTime = times[0]
+      #! change the time difference here
       minTime = datetime.timedelta(seconds=10)
       timeDiff = errorTime-startTime
 
       if timeDiff < minTime:
+        #! don't forget to change the warning
         print("Please wait for 10 seconds to add new record")
         break
     
@@ -115,7 +133,7 @@ if tempDetected == True:
   #KALO HARI INI BELOM DATENG, BIKIN RECORD BARU. MASUKIN employeeID, date, startTime, startTemp dari hasil pembacaan kamera
   if present == False:
     #INSERT NEW ATTENDANCE (START)
-    sql = "INSERT INTO attendance_list (employeeID, date, startTime, startTemp) VALUES (%s,%s,%s,%s)"
+    sql = "INSERT INTO attendance_list (employeeID, attendanceDate, startTime, startTemp) VALUES (%s,%s,%s,%s)"
     val = (currentFace.id, currentDate, currentTime, currentFace.temp)
     mycursor.execute(sql, val)
     db.commit()
