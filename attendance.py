@@ -1,5 +1,5 @@
 # USAGE
-# attendabce.py --encodings encodings.pickle
+# attendance.py --encodings encodings.pickle
 
 # import face recognition packages
 from imutils.video import VideoStream
@@ -16,6 +16,11 @@ import board
 import busio as io 
 import adafruit_mlx90614
 
+# import database packages
+import mysql.connector
+import datetime
+import argparse
+
 # construct the argument parser & parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-e", "--encodings", required=True,
@@ -31,6 +36,17 @@ detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 print ("[INFO] connecting temperature sensor...")
 i2c = io.I2C(board.SCL, board.SDA, frequency=100000)
 mlx = adafruit_mlx90614.MLX90614(i2c)
+
+# create connection to the database
+#! change the host depends on the device you are using
+print("[INFO] connecting to the database...")
+db = mysql.connector.connect(
+    host = "localhost",
+    user = "root",
+    password = "root",
+    database = "attendance_system"
+)
+myCursor = db.cursor()
 
 # initialize video stream and warm up the camera
 #! change the VideoStream source depends on the camera you are using
