@@ -1,3 +1,5 @@
+# TODO uncomment the temperature sensor
+
 # USAGE
 # attendance.py --encodings encodings.pickle
 
@@ -12,9 +14,9 @@ import time
 import cv2
 
 # import temperature sensor packages
-import board
-import busio as io 
-import adafruit_mlx90614
+# import board
+# import busio as io 
+# import adafruit_mlx90614
 
 # import database packages
 import mysql.connector
@@ -33,9 +35,9 @@ data = pickle.loads(open(args["encodings"], "rb").read())
 detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # create connection to MLX90614
-print ("[INFO] connecting temperature sensor...")
-i2c = io.I2C(board.SCL, board.SDA, frequency=100000)
-mlx = adafruit_mlx90614.MLX90614(i2c)
+# print ("[INFO] connecting temperature sensor...")
+# i2c = io.I2C(board.SCL, board.SDA, frequency=100000)
+# mlx = adafruit_mlx90614.MLX90614(i2c)
 
 # create connection to the database
 #! change the host depends on the device you are using
@@ -65,7 +67,7 @@ while True:
     frame = imutils.resize(frame, width=500)
 
     # get temperature from MLX90614
-    objectTemp = "{:.2f}".format(mlx.object_temperature)
+    # objectTemp = "{:.2f}".format(mlx.object_temperature)
 
     # convert the BGR input frame to: 
     # (1) grayscale (for face detection) 
@@ -74,7 +76,7 @@ while True:
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # detect faces in the grayscale frame 
-    rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+    rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(250, 250), flags=cv2.CASCADE_SCALE_IMAGE)
 
     # reordering the coordinates from (x,y,w,h) from OpenCV to (top, right, bottom, left)
     boxes = [(y, x+w, y+h, x) for (x, y, w, h) in rects]
@@ -118,8 +120,8 @@ while True:
         y = top - 15 if top - 15 > 15 else top + 15
         cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
         # draw the temperature on the frame
-        y = bottom + 25 if bottom + 25 < 370 else bottom - 5
-        cv2.putText(frame, objectTemp, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 165, 255), 2)
+        # y = bottom + 25 if bottom + 25 < 370 else bottom - 5
+        # cv2.putText(frame, objectTemp, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 165, 255), 2)
 
     # display the image to our screen
     cv2.imshow("Frame", frame)
