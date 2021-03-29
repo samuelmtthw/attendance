@@ -62,6 +62,11 @@ fps = FPS().start()
 
 # loop over frames from the video file stream
 while True: 
+    # set current date & time
+    now = datetime.datetime.now()
+    currentDate = now.strftime("%Y-%m-%d")
+    currentTime = now.strftime("%H:%M:%S")
+    
     # grab the frame from the threaded video stream and resize it to 500px (to speedup processing)
     frame = vs.read()
     frame = imutils.resize(frame, width=500)
