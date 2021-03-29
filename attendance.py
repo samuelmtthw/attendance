@@ -76,7 +76,7 @@ while True:
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # detect faces in the grayscale frame 
-    rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(250, 250), flags=cv2.CASCADE_SCALE_IMAGE)
+    rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(200, 200), flags=cv2.CASCADE_SCALE_IMAGE)
 
     # reordering the coordinates from (x,y,w,h) from OpenCV to (top, right, bottom, left)
     boxes = [(y, x+w, y+h, x) for (x, y, w, h) in rects]
