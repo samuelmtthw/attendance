@@ -48,6 +48,16 @@ time.sleep(2.0)
 # start the FPS counter
 fps = FPS().start()
 
+# get all of the employeeID from the database
+sql = "SELECT employeeID FROM employee"
+myCursor.execute(sql)
+employees = myCursor.fetchall()
+
+# create a dictionary to count how many times the ID is already detected today
+timesDetected = {}
+for employee in employees:
+    timesDetected[employee[0]] = 0
+
 # loop over frames from the video file stream
 while True: 
     # set current date & time
@@ -61,18 +71,13 @@ while True:
     myCursor.execute(sql, val)
     myResult = myCursor.fetchall()
 
-    # create a dictionary to check:
-    # 1. how many times the faces has been detected
-    timesDetected = {}
+    # create a list for present & finished IDs
+    todayStart = []
+    todayFinish = []
 
-    # create a list and put all of the IDs into the list
-    todaysList = []
+    # put all of the present IDs into the list
     for result in myResult:
-        todaysList.append(result[0])
-
-    # take all of the list items and set it as a dictionary key
-    for item in todaysList:
-        timesDetected[item] = 0
+        todayStart.append(result[0])
 
     # grab the frame from the threaded video stream and resize it to 500px (to speedup processing)
     frame = vs.read()
@@ -122,28 +127,43 @@ while True:
             # Python will select first entry in the dictionary)
             name = max(counts, key=counts.get)
 
-            # check if the name is already present today
-            if name in todaysList:
-                # confirmFace += 1
-                print("yes")
-                # print(confirmFace)
-                # if confirmFace >= 50:
-                    # print("FACE CONFIRMED")
-            # otherwise, add the new face to the database
-            else:
-                print("no")
-                sql = "INSERT INTO attendance_list (employeeID, attendanceDate, startTime, startTemp) VALUES (%s, %s, %s, %s)"
-                val = (name, currentDate, currentTime, objectTemp)
-                myCursor.execute(sql, val)
-                db.commit()
+            # wait for the faces to reach certain number 
+            timesDetected[name] += 1
+            print(timesDetected)
 
-            # if (person[0] in persons) == name:
-            #     print("PERSON IS ALREADY HERE")
-            # else:
-            #     print("PERSON IS NOT HERE YET")
+            # loop over the dictionary
+            for employeeID in timesDetected:
+                # check if there is a face that already reach the required number
+                #! change the number based on the time you get for 5 seconds
+                if timesDetected[employeeID] > 300:
+                    # check if the ID is already present
+                    if employeeID in todayStart:
+                        # check if the ID is already gone
+                        if employeeID not in todayFinish:
+                            # if the ID is not gone, update the entry in the database
+                            sql = "UPDATE attendance_list SET finishTime = %s, finishTemp = %s, WHERE attendanceDate = %s AND employeeID = %s"
+                            val = (currentTime, objectTemp, currentDate, employeeID)
+                            myCursor.execute(sql, val)
+                            db.commit()
 
+                            print("Entry updated")
 
-            
+                            # reset the counter of that ID
+                            timesDetected[name] = 0
+
+                            # add the ID to the finished list
+                            todayFinish.append(name)
+
+                    else:
+                        sql = "INSERT INTO attendance_list (employeeID, attendanceDate, startTime, startTemp) VALUES (%s, %s, %s, %s)"
+                        val = (name, currentDate, currentTime, objectTemp)
+                        myCursor.execute(sql, val)
+                        db.commit()      
+
+                        print("New entry added")
+
+                        # reset the counter for that ID
+                        timesDetected[name] = 0
 
         # update the list of names
         names.append(name)
