@@ -54,10 +54,32 @@ while True:
     now = datetime.datetime.now()
     currentDate = now.strftime("%Y-%m-%d")
     currentTime = now.strftime("%H:%M:%S")
-    
+
+    # get all of the IDs from today's attendance list from the database
+    sql = "SELECT employeeID FROM attendance_list WHERE attendanceDate = %s"
+    val = (currentDate,)
+    myCursor.execute(sql, val)
+    myResult = myCursor.fetchall()
+
+    # create a dictionary to check:
+    # 1. how many times the faces has been detected
+    timesDetected = {}
+
+    # create a list and put all of the IDs into the list
+    todaysList = []
+    for result in myResult:
+        todaysList.append(result[0])
+
+    # take all of the list items and set it as a dictionary key
+    for item in todaysList:
+        timesDetected[item] = 0
+
     # grab the frame from the threaded video stream and resize it to 500px (to speedup processing)
     frame = vs.read()
     frame = imutils.resize(frame, width=500)
+
+    #! delete later!
+    objectTemp = 36.8
 
     # convert the BGR input frame to: 
     # (1) grayscale (for face detection) 
@@ -99,6 +121,29 @@ while True:
             # of votes (note: in the event of an unlikely tie 
             # Python will select first entry in the dictionary)
             name = max(counts, key=counts.get)
+
+            # check if the name is already present today
+            if name in todaysList:
+                # confirmFace += 1
+                print("yes")
+                # print(confirmFace)
+                # if confirmFace >= 50:
+                    # print("FACE CONFIRMED")
+            # otherwise, add the new face to the database
+            else:
+                print("no")
+                sql = "INSERT INTO attendance_list (employeeID, attendanceDate, startTime, startTemp) VALUES (%s, %s, %s, %s)"
+                val = (name, currentDate, currentTime, objectTemp)
+                myCursor.execute(sql, val)
+                db.commit()
+
+            # if (person[0] in persons) == name:
+            #     print("PERSON IS ALREADY HERE")
+            # else:
+            #     print("PERSON IS NOT HERE YET")
+
+
+            
 
         # update the list of names
         names.append(name)
