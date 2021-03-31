@@ -45,6 +45,10 @@ vs = VideoStream(src=0).start() # for webcam
 # vs = VideoStream(usePiCamera=True).start() # for picamera
 time.sleep(2.0)
 
+# set current date
+now = datetime.datetime.now()
+currentDate = now.strftime("%Y-%m-%d")
+
 # start the FPS counter
 fps = FPS().start()
 
@@ -58,11 +62,21 @@ timesDetected = {}
 for employee in employees:
     timesDetected[employee[0]] = 0
 
+# create a list for finished IDs
+todayFinish = []
+
+# get all of the finished IDs from today's attendance list
+sql = "SELECT employeeID from attendance_list WHERE attendanceDate = %s AND finishTime IS NOT NULL"
+val = (currentDate,)
+myCursor.execute(sql, val)
+finished = myCursor.fetchall()
+
+for result in finished:
+    todayFinish.append(result[0])
+
 # loop over frames from the video file stream
 while True: 
-    # set current date & time
-    now = datetime.datetime.now()
-    currentDate = now.strftime("%Y-%m-%d")
+    # set current time
     currentTime = now.strftime("%H:%M:%S")
 
     # get all of the IDs from today's attendance list from the database
@@ -71,13 +85,15 @@ while True:
     myCursor.execute(sql, val)
     myResult = myCursor.fetchall()
 
-    # create a list for present & finished IDs
+    # create a list for present IDs
     todayStart = []
-    todayFinish = []
 
     # put all of the present IDs into the list
     for result in myResult:
         todayStart.append(result[0])
+
+    print("STARTED = " , todayStart)
+    print("FINISHED = " , todayFinish)
 
     # grab the frame from the threaded video stream and resize it to 500px (to speedup processing)
     frame = vs.read()
@@ -135,13 +151,13 @@ while True:
             for employeeID in timesDetected:
                 # check if there is a face that already reach the required number
                 #! change the number based on the time you get for 5 seconds
-                if timesDetected[employeeID] > 300:
+                if timesDetected[employeeID] > 100:
                     # check if the ID is already present
                     if employeeID in todayStart:
                         # check if the ID is already gone
                         if employeeID not in todayFinish:
                             # if the ID is not gone, update the entry in the database
-                            sql = "UPDATE attendance_list SET finishTime = %s, finishTemp = %s, WHERE attendanceDate = %s AND employeeID = %s"
+                            sql = "UPDATE attendance_list SET finishTime = %s, finishTemp = %s WHERE attendanceDate = %s AND employeeID = %s"
                             val = (currentTime, objectTemp, currentDate, employeeID)
                             myCursor.execute(sql, val)
                             db.commit()
@@ -153,6 +169,9 @@ while True:
 
                             # add the ID to the finished list
                             todayFinish.append(name)
+                        
+                        else:
+                            timesDetected[name] = 0
 
                     else:
                         sql = "INSERT INTO attendance_list (employeeID, attendanceDate, startTime, startTemp) VALUES (%s, %s, %s, %s)"
