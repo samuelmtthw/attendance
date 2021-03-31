@@ -38,19 +38,10 @@ db = mysql.connector.connect(
 )
 myCursor = db.cursor()
 
-# initialize video stream and warm up the camera
-#! change the VideoStream source depends on the camera you are using
-print("[INFO] starting video stream...")
-vs = VideoStream(src=0).start() # for webcam
-# vs = VideoStream(usePiCamera=True).start() # for picamera
-time.sleep(2.0)
-
 # set current date
+print("[INFO] loading data from the database")
 now = datetime.datetime.now()
 currentDate = now.strftime("%Y-%m-%d")
-
-# start the FPS counter
-fps = FPS().start()
 
 # get all of the employeeID from the database
 sql = "SELECT employeeID FROM employee"
@@ -74,6 +65,16 @@ finished = myCursor.fetchall()
 for result in finished:
     todayFinish.append(result[0])
 
+# initialize video stream and warm up the camera
+#! change the VideoStream source depends on the camera you are using
+print("[INFO] starting video stream...")
+vs = VideoStream(src=0).start() # for webcam
+# vs = VideoStream(usePiCamera=True).start() # for picamera
+time.sleep(2.0)
+
+# start the FPS counter
+fps = FPS().start()
+
 # loop over frames from the video file stream
 while True: 
     # set current time
@@ -91,9 +92,6 @@ while True:
     # put all of the present IDs into the list
     for result in myResult:
         todayStart.append(result[0])
-
-    print("STARTED = " , todayStart)
-    print("FINISHED = " , todayFinish)
 
     # grab the frame from the threaded video stream and resize it to 500px (to speedup processing)
     frame = vs.read()
