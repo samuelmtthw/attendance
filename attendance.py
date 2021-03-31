@@ -90,6 +90,7 @@ fps = FPS().start()
 # loop over frames from the video file stream
 while True: 
     # set current time
+    now = datetime.datetime.now()
     currentTime = now.strftime("%H:%M:%S")
 
     # get all of the IDs from today's attendance list from the database

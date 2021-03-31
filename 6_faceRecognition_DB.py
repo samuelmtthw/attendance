@@ -78,6 +78,7 @@ fps = FPS().start()
 # loop over frames from the video file stream
 while True: 
     # set current time
+    now = datetime.datetime.now()
     currentTime = now.strftime("%H:%M:%S")
 
     # get all of the IDs from today's attendance list from the database
@@ -143,7 +144,6 @@ while True:
 
             # wait for the faces to reach certain number 
             timesDetected[name] += 1
-            print(timesDetected)
 
             # loop over the dictionary
             for employeeID in timesDetected:
