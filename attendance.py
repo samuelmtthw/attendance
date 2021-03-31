@@ -1,7 +1,7 @@
-# TODO uncomment the temperature sensor
-
 # USAGE
 # attendance.py --encodings encodings.pickle
+
+# !The program has to be restarted every day to update the date
 
 # import face recognition packages
 from imutils.video import VideoStream
@@ -14,9 +14,9 @@ import time
 import cv2
 
 # import temperature sensor packages
-# import board
-# import busio as io 
-# import adafruit_mlx90614
+import board
+import busio as io 
+import adafruit_mlx90614
 
 # import database packages
 import mysql.connector
@@ -35,9 +35,9 @@ data = pickle.loads(open(args["encodings"], "rb").read())
 detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # create connection to MLX90614
-# print ("[INFO] connecting temperature sensor...")
-# i2c = io.I2C(board.SCL, board.SDA, frequency=100000)
-# mlx = adafruit_mlx90614.MLX90614(i2c)
+print ("[INFO] connecting temperature sensor...")
+i2c = io.I2C(board.SCL, board.SDA, frequency=100000)
+mlx = adafruit_mlx90614.MLX90614(i2c)
 
 # create connection to the database
 #! change the host depends on the device you are using
@@ -49,6 +49,33 @@ db = mysql.connector.connect(
     database = "attendance_system"
 )
 myCursor = db.cursor()
+
+# set current date
+print("[INFO] loading data from the database")
+now = datetime.datetime.now()
+currentDate = now.strftime("%Y-%m-%d")
+
+# get all of the employeeID from the database
+sql = "SELECT employeeID FROM employee"
+myCursor.execute(sql)
+employees = myCursor.fetchall()
+
+# create a dictionary to count how many times the ID is already detected today
+timesDetected = {}
+for employee in employees:
+    timesDetected[employee[0]] = 0
+
+# create a list for finished IDs
+todayFinish = []
+
+# get all of the finished IDs from today's attendance list
+sql = "SELECT employeeID from attendance_list WHERE attendanceDate = %s AND finishTime IS NOT NULL"
+val = (currentDate,)
+myCursor.execute(sql, val)
+finished = myCursor.fetchall()
+
+for result in finished:
+    todayFinish.append(result[0])
 
 # initialize video stream and warm up the camera
 #! change the VideoStream source depends on the camera you are using
@@ -62,17 +89,28 @@ fps = FPS().start()
 
 # loop over frames from the video file stream
 while True: 
-    # set current date & time
-    now = datetime.datetime.now()
-    currentDate = now.strftime("%Y-%m-%d")
+    # set current time
     currentTime = now.strftime("%H:%M:%S")
+
+    # get all of the IDs from today's attendance list from the database
+    sql = "SELECT employeeID FROM attendance_list WHERE attendanceDate = %s"
+    val = (currentDate,)
+    myCursor.execute(sql, val)
+    myResult = myCursor.fetchall()
+
+    # create a list for present IDs
+    todayStart = []
+
+    # put all of the present IDs into the list
+    for result in myResult:
+        todayStart.append(result[0])
     
     # grab the frame from the threaded video stream and resize it to 500px (to speedup processing)
     frame = vs.read()
     frame = imutils.resize(frame, width=500)
 
     # get temperature from MLX90614
-    # objectTemp = "{:.2f}".format(mlx.object_temperature)
+    objectTemp = "{:.2f}".format(mlx.object_temperature)
 
     # convert the BGR input frame to: 
     # (1) grayscale (for face detection) 
@@ -115,6 +153,46 @@ while True:
             # Python will select first entry in the dictionary)
             name = max(counts, key=counts.get)
 
+            # wait for the faces to reach certain number 
+            timesDetected[name] += 1
+
+            # loop over the dictionary
+            for employeeID in timesDetected:
+                # check if there is a face that already reach the required number
+                #! change the number based on the time you get for 5 seconds
+                if timesDetected[employeeID] > 100:
+                    # check if the ID is already present
+                    if employeeID in todayStart:
+                        # check if the ID is already gone
+                        if employeeID not in todayFinish:
+                            # if the ID is not gone, update the entry in the database
+                            sql = "UPDATE attendance_list SET finishTime = %s, finishTemp = %s WHERE attendanceDate = %s AND employeeID = %s"
+                            val = (currentTime, objectTemp, currentDate, employeeID)
+                            myCursor.execute(sql, val)
+                            db.commit()
+
+                            print("Entry updated")
+
+                            # reset the counter of that ID
+                            timesDetected[name] = 0
+
+                            # add the ID to the finished list
+                            todayFinish.append(name)
+                        
+                        else:
+                            timesDetected[name] = 0
+
+                    else:
+                        sql = "INSERT INTO attendance_list (employeeID, attendanceDate, startTime, startTemp) VALUES (%s, %s, %s, %s)"
+                        val = (name, currentDate, currentTime, objectTemp)
+                        myCursor.execute(sql, val)
+                        db.commit()      
+
+                        print("New entry added")
+
+                        # reset the counter for that ID
+                        timesDetected[name] = 0
+
         # update the list of names
         names.append(name)
     
@@ -125,8 +203,8 @@ while True:
         y = top - 15 if top - 15 > 15 else top + 15
         cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
         # draw the temperature on the frame
-        # y = bottom + 25 if bottom + 25 < 370 else bottom - 5
-        # cv2.putText(frame, objectTemp, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 165, 255), 2)
+        y = bottom + 25 if bottom + 25 < 370 else bottom - 5
+        cv2.putText(frame, objectTemp, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 165, 255), 2)
 
     # display the image to our screen
     cv2.imshow("Frame", frame)
