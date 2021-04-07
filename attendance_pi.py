@@ -43,9 +43,9 @@ mlx = adafruit_mlx90614.MLX90614(i2c)
 #! change the host depends on the device you are using
 print("[INFO] connecting to the database...")
 db = mysql.connector.connect(
-    host = "localhost",
+    host = "192.168.88.4", # your DB host (Macbook IP Address)
     user = "root",
-    password = "root",
+    password = "raspberry",
     database = "attendance_system"
 )
 myCursor = db.cursor()
