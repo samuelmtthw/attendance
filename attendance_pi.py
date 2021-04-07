@@ -1,5 +1,5 @@
 # USAGE
-# attendance.py --encodings encodings.pickle
+# attendance_pi.py --encodings encodings.pickle
 
 # !The program has to be restarted every day to update the date
 
