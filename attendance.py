@@ -14,9 +14,9 @@ import time
 import cv2
 
 # import temperature sensor packages
-import board
-import busio as io 
-import adafruit_mlx90614
+# import board
+# import busio as io 
+# import adafruit_mlx90614
 
 # import database packages
 import mysql.connector
@@ -35,9 +35,9 @@ data = pickle.loads(open(args["encodings"], "rb").read())
 detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # create connection to MLX90614
-print ("[INFO] connecting temperature sensor...")
-i2c = io.I2C(board.SCL, board.SDA, frequency=100000)
-mlx = adafruit_mlx90614.MLX90614(i2c)
+# print ("[INFO] connecting temperature sensor...")
+# i2c = io.I2C(board.SCL, board.SDA, frequency=100000)
+# mlx = adafruit_mlx90614.MLX90614(i2c)
 
 # create connection to the database
 #! change the host depends on the device you are using
@@ -111,7 +111,8 @@ while True:
     frame = imutils.resize(frame, width=500)
 
     # get temperature from MLX90614
-    objectTemp = "{:.2f}".format(mlx.object_temperature)
+    # objectTemp = "{:.2f}".format(mlx.object_temperature)
+    objectTemp = 36.5
 
     # convert the BGR input frame to: 
     # (1) grayscale (for face detection) 
