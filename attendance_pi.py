@@ -110,8 +110,9 @@ while True:
     frame = vs.read()
     frame = imutils.resize(frame, width=500)
 
-    # get temperature from MLX90614
-    objectTemp = "{:.2f}".format(mlx.object_temperature)
+    # get temperature from MLX90614 and add it by 4.4 for buffer value
+    objectTemp = "{:.2f}".format(mlx.object_temperature + 4.4)
+   
 
     # convert the BGR input frame to: 
     # (1) grayscale (for face detection) 
@@ -155,7 +156,7 @@ while True:
             name = max(counts, key=counts.get)
 
             # wait for the faces to reach certain number 
-            timesDetected[name] += 1
+            timesDetected[name] += 10
 
             # loop over the dictionary
             for employeeID in timesDetected:
