@@ -173,7 +173,7 @@ while True:
                             myCursor.execute(sql, val)
                             db.commit()
 
-                            print("Entry updated")
+                            print("Entry updated, ID: " + name)
 
                             # reset the counter of that ID
                             timesDetected[name] = 0
@@ -190,7 +190,7 @@ while True:
                         myCursor.execute(sql, val)
                         db.commit()      
 
-                        print("New entry added")
+                        print("New entry added, ID: " + name)
 
                         # reset the counter for that ID
                         timesDetected[name] = 0
